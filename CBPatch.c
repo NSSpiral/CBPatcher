@@ -480,10 +480,10 @@ int kernPatOld(void *buf, size_t len, char *version, int nukesb)
 
                             for (int e = a; e < (a + 0x20); e += 2)
                             {
-                                if (*(uint16_t *)&buf[e] == 0xb948)//fix
+                                if (*(uint16_t *)&buf[e] == 0xb948)
                                 {
-                                    PatchLog("Found tfp0 BNE, #0 at 0x%x\n", e);
-                                    *(uint32_t *)&buf[e] = 0xe006; //Change BNE to B.
+                                    PatchLog("Found tfp0 CBNZ, #0 at 0x%x\n", e);
+                                    *(uint32_t *)&buf[e] = 0xe009; //Change CBNZ to B.
                                     goto tfpout;
                                 }
                             }
@@ -554,8 +554,8 @@ int kernPatOld(void *buf, size_t len, char *version, int nukesb)
                             {
                                 if (*(uint32_t *)&buf[e] == 0x0f00f1bb)
                                 {
-                                    PatchLog("Found tfp0 CMP.W SL, #0 at 0x%x\n", e);
-                                    *(uint32_t *)&buf[e + 0x6] = 0xe006; //Change BEQ to B.
+                                    PatchLog("Found tfp0 CMP.W FL, #0 at 0x%x\n", e);
+                                    *(uint32_t *)&buf[e + 0x4] = 0xe0ba; //Change BEQ to B.
                                     goto tfpout;
                                 }
                             }
@@ -611,9 +611,18 @@ int kernPatOld(void *buf, size_t len, char *version, int nukesb)
             */
             if (versionFloat == (float)4.0)
             {
-                     ii++;
-                     i = 0;
-               //Not sure, it looks like this isn't neccessary in iOS 4, but I'm not totally certain — will need further testing.
+               int iiii = 0;
+                if (*(uint16_t *)&buf[i] == 0xE000 && *(uint16_t *)&buf[i + 0x6] == 0xe92d && *(uint16_t *)&buf[i + 0x1c] == 0xd056)
+                {
+                    PatchLog("Found AMFI BEQ at 0x%x\n", i + 0x2e);
+                    *(uint16_t *)&buf[i + 0x1c] = 0xbf00;
+                }
+               if (*(uint32_t *)&buf[i] == 0x80015FA1 && *(uint16_t *)&buf[i + 0x4] == 0xb5f0 && *(uint16_t *)&buf[i + 0x30] == 0x4798) {
+                    PatchLog("Found AMFI BLX at 0x%x\n", i + 0x38);
+                    *(uint16_t *)&buf[i + 0x38] = 0x2000;
+                    ii++;
+                    i = 0;
+               }
             }
             else if (versionFloat == (float)5.0)
             {
