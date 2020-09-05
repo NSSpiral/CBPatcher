@@ -555,7 +555,7 @@ int kernPatOld(void *buf, size_t len, char *version, int nukesb)
                                 if (*(uint32_t *)&buf[e] == 0x0f00f1bb)
                                 {
                                     PatchLog("Found tfp0 CMP.W FL, #0 at 0x%x\n", e);
-                                    *(uint32_t *)&buf[e + 0x4] = 0xe0ba; //Change BEQ to B.
+                                    *(uint32_t *)&buf[e + 0x4] = 0xbf00bf00; //Change BEQ to NOP.
                                     goto tfpout;
                                 }
                             }
