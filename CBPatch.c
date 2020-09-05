@@ -1985,8 +1985,9 @@ int kernPat(void **buf, size_t size, char *versionNumber, int nukesb)
     switch (versionInt)
     {
     case 4:
-        ret = kernPatOld(buf, size, versionNumber, nukesb);
-        break;
+        printf("iOS 4 is temporarily disaled while I work to fix sandboxing\n");
+        //ret = kernPatOld(buf, size, versionNumber, nukesb);
+            return -1;
     case 5:
         ret = kernPatOld(buf, size, versionNumber, nukesb);
         break;
