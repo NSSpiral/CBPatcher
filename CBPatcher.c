@@ -9,97 +9,100 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "CBPUtils.h"
 #include "CBPatch.h"
 
+
 int patch_kernel(char* infile, char* outfile, char* version);
 
-int main(int argc, char **argv) {
+#define MAIN
+#ifdef MAIN
+ int main(int argc, char **argv) {
     
-    if (argc < 4 || 5 < argc) {
-        printf("Missing args (cbpatcher infile outfile version [--nosb])\n");
-        return -1;
-    }
+     if (argc < 4 || 5 < argc) {
+         printf("Missing args (cbpatcher infile outfile version [--nosb])\n");
+         return -1;
+     }
     
-    int nukesb = 1;
+     int nukesb = 1;
     
-    if (argc == 5) {
-        if(!strcmp(argv[4], "--nosb")){
-            nukesb = 0;
-        }
-    }
+     if (argc == 5) {
+         if(!strcmp(argv[4], "--nosb")){
+             nukesb = 0;
+         }
+     }
     
-    char *fileName = argv[1];
+     char *fileName = argv[1];
     
-    void *fileBuf = 0;
+     void *fileBuf = 0;
     
-    size_t fileLen = 0;
+     size_t fileLen = 0;
     
-    int ret = openFile(fileName, &fileLen, &fileBuf);
+     int ret = openFile(fileName, &fileLen, &fileBuf);
     
-    if (ret) {
-        printf("Failed to open %s\n", fileName);
-        return -1;
-    }
+     if (ret) {
+         printf("Failed to open %s\n", fileName);
+         return -1;
+     }
     
-    char *versionNum = argv[3];
+     char *versionNum = argv[3];
     
-    ret = kernPat(fileBuf, fileLen, versionNum, nukesb);
+     ret = kernPat(fileBuf, fileLen, versionNum, nukesb);
     
-    if (ret) {
-        printf("Failed to patch kernel\n");
-        free(fileBuf);
-        return -1;
-    }
+     if (ret) {
+         printf("Failed to patch kernel\n");
+         free(fileBuf);
+         return -1;
+     }
     
-    printf("Kernel patched successfully\n");
+     printf("Kernel patched successfully\n");
     
-    FILE *outFile = fopen(argv[2], "w");
-    fwrite(fileBuf, fileLen, 1, outFile);
-    fflush(outFile);
-    fclose(outFile);
+     FILE *outFile = fopen(argv[2], "w");
+     fwrite(fileBuf, fileLen, 1, outFile);
+     fflush(outFile);
+     fclose(outFile);
     
-    free(fileBuf);
+     free(fileBuf);
     
-    return 0;
-}
-
+     return 0;
+ }
+#endif
 int patch_kernel(char* infile, char* outfile, char* version) {
-    
+   
     int nukesb = 1;
-    
+   
     char *fileName = infile;
-    
+   
     void *fileBuf = 0;
-    
+   
     size_t fileLen = 0;
-    
+   
     int ret = openFile(fileName, &fileLen, &fileBuf);
-    
+   
     if (ret) {
         printf("Failed to open %s\n", fileName);
         return -1;
     }
-    
+   
     char *versionNum = version;
-    
+   
     ret = kernPat(fileBuf, fileLen, versionNum, nukesb);
-    
+   
     if (ret) {
         printf("Failed to patch kernel\n");
         free(fileBuf);
         return -1;
     }
-    
+   
     printf("Kernel patched successfully\n");
-    
+   
     FILE *outFile = fopen(outfile, "w");
     fwrite(fileBuf, fileLen, 1, outFile);
     fflush(outFile);
     fclose(outFile);
-    
+   
     free(fileBuf);
-    
+   
     return 0;
 }
+
