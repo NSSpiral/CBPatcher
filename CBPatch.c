@@ -1307,7 +1307,24 @@ int kernPatOld(void *buf, size_t len, char *version, int nukesb)
                     ii++;
                     i = 0;
                 }
-            } //add iOS 8
+            }
+            else if (versionFloat >= (float) 8.0)
+            {
+                if (*(uint64_t *)&buf[i] == 0xf0406820bf1e2800 && *(uint32_t *)&buf[i + 0x6] == 0x0004f040) 
+                {
+
+                    PatchLog("Found substrate patch offset at 0x%x\n", i);
+
+                    /* CS_GET_TASK_ALLOW */
+                    *(uint16_t *)&buf[i + 0x2] = 0xbf00;
+
+                    /* CS_INSTALLER */
+                    *(uint16_t *)&buf[i + 0x12] = 0xbf00;
+
+                    ii++;
+                    i = 0;
+                }
+            }
             else
             {
                 ii++;
