@@ -355,92 +355,109 @@ int kernPatOld(void *buf, size_t len, char *version, int nukesb)
              */
 
             /* This is only enforced on the first LwVM device before 9.3.2. Since we use the third device, skip */
-            if (versionFloat < (float)9.0)
+
+            if (versionFloat >= (float)9.0) 
+            {
+                i = (uint32_t)find_sym(buf, "_PE_i_can_has_kernel_configuration") - (uint32_t)buf;
+
+                if (!i)
+                {
+                    break;
+                }
+
+                PatchLog("Found PE_i_can_has_kernel_configuration offset at 0x%x\n", i);
+
+                uint32_t PE_i_can_has_kernel_configuration = (i + 0x80001000 + 0x1);
+
+                i = 0;
+
+                int iii = 0;
+
+                uint32_t osMallocTagFree = 0;
+
+                uint32_t mapforIO = 0;
+
+                for (uint32_t a = 0; (uint32_t)a < (uint32_t)(len - 0x8000); a++)
+                {
+                    if (!iii)
+                    {
+
+                        a = (uint32_t)find_sym(buf, "_OSMalloc_Tagfree") - (int)buf;
+
+                        if (!a)
+                        {
+                            break;
+                        }
+
+                        PatchLog("Found OSMalloc_Tagfree at 0x%x\n", a);
+
+                        osMallocTagFree = (a + 0x80001000 + 0x1);
+
+                        a = 0;
+                        iii++;
+                    }
+                    if (iii == 1)
+                    {
+                        if (*(uint64_t *)&buf[a] == 0xf010798044406da0 && *(uint32_t *)&buf[a + 0x8] == 0xd0060f01 && *(uint16_t *)&buf[a + 0xC] == 0x4620)
+                        {
+                            PatchLog("Found _mapForIO at 0x%x\n", a);
+                            mapforIO = ((a + 0x80001000 + kextbase) + 0x1);
+                            iii++;
+                            a = 0;
+                        }
+                    }
+                    if (iii == 2)
+                    {
+                        if (*(uint32_t *)&buf[a] == osMallocTagFree)
+                        {
+                            if (*(uint32_t *)&buf[a + 0x4] == PE_i_can_has_kernel_configuration)
+                            {
+                                PatchLog("Found LwVM call to PE_i_can_has_kernel_configuration at 0x%x\n", a + 0x4);
+                                // Change PE_I_can_has_kernel_configuration call and jumping over partition->isWriteProtected check
+                                
+                                PatchLog("Location %x\n", *(uint32_t *)&buf[a + 0x4]);
+                                *(uint32_t *)&buf[a + 0x4] = mapforIO;
+                                iii++;
+                                a = 0;
+                            }
+                        }
+                    }
+
+                    if (iii == 3)
+                    {
+                        break;
+                    }
+                }
+
+                if (iii != 3)
+                {
+                    PatchLog("One or more patches not found %d at line %d\n", iii, __LINE__);
+                    return -1;
+                }
+
+                ii++;
+                i = 0;
+            }
+            else if (versionFloat >= (float)8.0) 
+            {
+                if (*(uint64_t *)&buf[i] == 0x48491104f8dad107)
+                {
+                    PatchLog("Found _mapForIO call\n");
+                    *(uint32_t *)&buf[i + 0xE] = 0xbf00bf00;
+                    ii++;
+                    i=0;
+                    continue;
+                }
+                i++;
+                continue;
+            }
+            else
             {
                 ii++;
                 i = 0;
                 continue;
             }
-
-            i = (uint32_t)find_sym(buf, "_PE_i_can_has_kernel_configuration") - (uint32_t)buf;
-
-            if (!i)
-            {
-                break;
-            }
-
-            PatchLog("Found PE_i_can_has_kernel_configuration offset at 0x%x\n", i);
-
-            uint32_t PE_i_can_has_kernel_configuration = (i + 0x80001000 + 0x1);
-
-            i = 0;
-
-            int iii = 0;
-
-            uint32_t osMallocTagFree = 0;
-
-            uint32_t mapforIO = 0;
-
-            for (uint32_t a = 0; (uint32_t)a < (uint32_t)(len - 0x8000); a++)
-            {
-                if (!iii)
-                {
-
-                    a = (uint32_t)find_sym(buf, "_OSMalloc_Tagfree") - (int)buf;
-
-                    if (!a)
-                    {
-                        break;
-                    }
-
-                    PatchLog("Found OSMalloc_Tagfree at 0x%x\n", a);
-
-                    osMallocTagFree = (a + 0x80001000 + 0x1);
-
-                    a = 0;
-                    iii++;
-                }
-                if (iii == 1)
-                {
-                    if (*(uint64_t *)&buf[a] == 0xf010798044406da0 && *(uint32_t *)&buf[a + 0x8] == 0xd0060f01 && *(uint16_t *)&buf[a + 0xC] == 0x4620)
-                    {
-                        PatchLog("Found _mapForIO at 0x%x\n", a);
-                        mapforIO = ((a + 0x80001000 + kextbase) + 0x1);
-                        iii++;
-                        a = 0;
-                    }
-                }
-                if (iii == 2)
-                {
-                    if (*(uint32_t *)&buf[a] == osMallocTagFree)
-                    {
-                        if (*(uint32_t *)&buf[a + 0x4] == PE_i_can_has_kernel_configuration)
-                        {
-                            PatchLog("Found LwVM call to PE_i_can_has_kernel_configuration at 0x%x\n", a + 0x4);
-                            // Change PE_I_can_has_kernel_configuration call and jumping over partition->isWriteProtected check
-                            *(uint32_t *)&buf[a + 0x4] = mapforIO;
-                            iii++;
-                            a = 0;
-                        }
-                    }
-                }
-
-                if (iii == 3)
-                {
-                    break;
-                }
-            }
-
-            if (iii != 3)
-            {
-                PatchLog("One or more patches not found %d at line %d\n", iii, __LINE__);
-                return -1;
-            }
-
-            ii++;
-            i = 0;
         }
-
         if (ii == 2)
         {
             i = (uint32_t)find_sym(buf, "_PE_i_can_has_debugger") - (uint32_t)buf;

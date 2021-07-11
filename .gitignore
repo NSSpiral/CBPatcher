@@ -1,0 +1,7 @@
+
+libcbpatcher.a
+CBPatcher
+CBPatcher.o
+CBPUtils.o
+CBPatch.o
+CBPatcher
